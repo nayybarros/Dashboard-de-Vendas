@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Vendas - Análise Completa de Empreendimentos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #00512A 0%, #007C27 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #00512A, #007C27);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1em;
+        }
+        
+        /* Navegação por abas */
+        .tab-navigation {
+            background: #F0F5CD;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            overflow-x: auto;
+        }
+        
+        .tab-button {
+            padding: 20px 30px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #00512A;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 1em;
+        }
+        
+        .tab-button:hover {
+            background: rgba(0, 124, 39, 0.1);
+        }
+        
+        .tab-button.active {
+            background: white;
+            border-bottom-color: #007C27;
+            color: #007C27;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .filters {
+            padding: 30px;
+            background: #F0F5CD;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            color: #00512A;
+            font-size: 0.9em;
+        }
+        
+        .filter-group select {
+            padding: 12px 16px;
+            border: 2px solid #6ECC01;
+            border-radius: 8px;
+            background: white;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .filter-group select:focus {
+            outline: none;
+            border-color: #007C27;
+            box-shadow: 0 0 0 3px rgba(0, 124, 39, 0.1);
+        }
+
+        .period-tabs {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 81, 42, 0.1);
+            border-radius: 10px;
+            padding: 5px;
+            margin-left: auto;
+        }
+
+        .period-tab {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #00512A;
+        }
+
+        .period-tab.active {
+            background: #007C27;
+            color: white;
+        }
+        
+        .dashboard {
+            padding: 30px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #6ECC01;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+            border-left-color: #007C27;
+        }
+        
+        .metric-card h3 {
+            color: #00512A;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007C27;
+            margin-bottom: 5px;
+        }
+        
+        .metric-card .subtitle {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container.large {
+            grid-column: 1 / -1;
+        }
+        
+        .chart-container h3 {
+            color: #00512A;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+        }
+        
+        .table-header {
+            background: linear-gradient(45deg, #007C27, #6ECC01);
+            color: white;
+            padding: 20px;
+        }
+        
+        .table-header h3 {
+            font-size: 1.3em;
+            font-weight: 300;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9em;
+        }
+        
+        th {
+            background: #F0F5CD;
+            font-weight: 600;
+            color: #00512A;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .performance-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .positive { background: #d4edda; color: #155724; }
+        .warning { background: #fff3cd; color: #856404; }
+        .negative { background: #f8d7da; color: #721c24; }
+        
+        .comparison-section {
+            margin-bottom: 30px;
+        }
+
+        .comparison-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .comparison-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-card h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .comparison-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+        }
+
+        .comparison-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+
+        .comparison-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        /* Estilos da aba Performance */
+        .performance-container {
+            padding: 30px;
+        }
+        
+        .performance-filters {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .performance-filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .performance-filter-group label {
+            font-weight: 600;
+            color: #00512A;
+            font-size: 0.9em;
+        }
+        
+        .performance-filter-group select {
+            padding: 12px 16px;
+            border: 2px solid #6ECC01;
+            border-radius: 8px;
+            background: white;
+            font-size: 1em;
+            min-width: 200px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .performance-filter-group select:focus {
+            outline: none;
+            border-color: #007C27;
+            box-shadow: 0 0 0 3px rgba(0, 124, 39, 0.1);
+        }
+        
+        .funnel-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .funnel-title {
+            text-align: center;
+            color: #00512A;
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        .funnel-chart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .funnel-stage {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .funnel-stage:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .stage-visita {
+            background: linear-gradient(45deg, #007C27, #6ECC01);
+            width: 400px;
+            height: 80px;
+        }
+        
+        .stage-pasta {
+            background: linear-gradient(45deg, #00512A, #007C27);
+            width: 320px;
+            height: 70px;
+        }
+        
+        .stage-venda-total {
+            background: linear-gradient(45deg, #1B5E20, #2E7D32);
+            width: 240px;
+            height: 60px;
+        }
+        
+        .stage-content {
+            text-align: center;
+        }
+        
+        .stage-label {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+        
+        .stage-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .conversion-rate {
+            position: absolute;
+            top: -25px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #00512A;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        
+        .metrics-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .metric-summary-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border-left: 4px solid #6ECC01;
+        }
+        
+        .metric-summary-card h4 {
+            color: #00512A;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-summary-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007C27;
+        }
+        
+        .period-selector {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 81, 42, 0.1);
+            border-radius: 10px;
+            padding: 5px;
+            margin-left: auto;
+        }
+        
+        .period-btn {
+            padding: 10px 20px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #00512A;
+        }
+        
+        .period-btn.active {
+            background: #007C27;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .period-tabs {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .performance-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .period-selector {
+                margin-left: 0;
+                margin-top: 20px;
+            }
+            
+            .funnel-stage {
+                width: 90% !important;
+                max-width: 350px;
+            }
+            
+            .tab-navigation {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Dashboard de Vendas</h1>
+            <p>Análise Completa de Performance dos Empreendimentos - 2025</p>
+        </div>
+        
+        <!-- Navegação por abas -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="showTab('dashboard')">Dashboard</button>
+            <button class="tab-button" onclick="showTab('performance')">Performance</button>
+        </div>
+        
+        <!-- Aba Dashboard (conteúdo original) -->
+        <div id="dashboard-tab" class="tab-content active">
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Linha de Produto:</label>
+                    <select id="linhaFilter">
+                        <option value="todas">Todas as Linhas</option>
+                        <option value="VITÓRIA">VITÓRIA</option>
+                        <option value="VISTA">VISTA</option>
+                        <option value="VIVER">VIVER</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Canal de Vendas:</label>
+                    <select id="canalFilter">
+                        <option value="todos">Todos os Canais</option>
+                        <option value="HOUSE">HOUSE</option>
+                        <option value="IMOB">IMOBILIÁRIA</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Empreendimento:</label>
+                    <select id="empreendimentoFilter">
+                        <option value="todos">Todos os Empreendimentos</option>
+                        <option value="ATLÂNTICO CONDOMINIO CLUBE">ATLÂNTICO CONDOMINIO CLUBE</option>
+                        <option value="Alta Vista Passare">Alta Vista Passare</option>
+                        <option value="Belvedere Condomínio Clube">Belvedere Condomínio Clube</option>
+                        <option value="JÓQUEI CONDOMÍNIO CLUBE">JÓQUEI CONDOMÍNIO CLUBE</option>
+                        <option value="Mirante Condominio Clube">Mirante Condominio Clube</option>
+                        <option value="PAUPINA">PAUPINA</option>
+                        <option value="VISTA COSTEIRA CUMBUCO">VISTA COSTEIRA CUMBUCO</option>
+                        <option value="VISTA PARQUE CONDOMÍNIO CLUBE">VISTA PARQUE CONDOMÍNIO CLUBE</option>
+                        <option value="VITÓRIA ACÁCIA">VITÓRIA ACÁCIA</option>
+                        <option value="VITÓRIA EUSEBIO">VITÓRIA EUSEBIO</option>
+                        <option value="VITÓRIA MARACANAÚ">VITÓRIA MARACANAÚ</option>
+                        <option value="VITÓRIA SENNA">VITÓRIA SENNA</option>
+                        <option value="Vista Mar Condomínio Clube">Vista Mar Condomínio Clube</option>
+                        <option value="Vitória Caucaia">Vitória Caucaia</option>
+                        <option value="Vitória Mondubim">Vitória Mondubim</option>
+                    </select>
+                </div>
+
+                <div class="period-tabs">
+                    <button class="period-tab active" data-period="agosto">Agosto</button>
+                    <button class="period-tab" data-period="julho">Julho</button>
+                    <button class="period-tab" data-period="ateJulho">Até Julho</button>
+                    <button class="period-tab" data-period="ano">Anual</button>
+                </div>
+            </div>
+            
+            <div class="dashboard">
+                <div class="metrics-grid" id="metricsGrid">
+                    <!-- Métricas serão inseridas aqui via JavaScript -->
+                </div>
+
+                <div class="comparison-section">
+                    <div class="comparison-cards" id="comparisonCards">
+                        <!-- Cards de comparação serão inseridos aqui -->
+                    </div>
+                </div>
+                
+                             
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3 id="tableTitle">Detalhamento por Empreendimento - Agosto</h3>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table id="empreendimentosTable">
+                            <thead id="tableHead">
+                                <!-- Cabeçalho será inserido via JavaScript -->
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Dados serão inseridos aqui via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba Performance -->
+        <div id="performance-tab" class="tab-content">
+            <div class="performance-container">
+                <div class="performance-filters">
+                    <div class="performance-filter-group">
+                        <label>Equipe:</label>
+                        <select id="equipeFilter">
+                            <option value="todas">Todas as Equipes</option>
+                            <option value="HOUSE">HOUSE</option>
+                            <option value="IMOB">IMOBILIÁRIA</option>
+                        </select>
+                    </div>
+                    
+                    <div class="performance-filter-group">
+                        <label>Empreendimento:</label>
+                        <select id="empreendimentoFilterPerf">
+                            <option value="todos">Todos os Empreendimentos</option>
+                        </select>
+                    </div>
+                    
+                    <div class="performance-filter-group">
+                        <label>Linha de Produto:</label>
+                        <select id="linhaFilterPerf">
+                            <option value="todas">Todas as Linhas</option>
+                            <option value="VITÓRIA">VITÓRIA</option>
+                            <option value="VISTA">VISTA</option>
+                            <option value="VIVER">VIVER</option>
+                        </select>
+                    </div>
+                    
+                    <div class="performance-filter-group">
+                        <label>Tipo de Venda:</label>
+                        <select id="tipoVendaFilter">
+                            <option value="todos">Todos os Tipos</option>
+                            <option value="VENDA TOTAL">VENDA TOTAL</option>
+                            <option value="ONLINE">ONLINE</option>
+                            <option value="OFFLINE">OFFLINE</option>
+                        </select>
+                    </div>
+                    
+                    <div class="period-selector">
+                        <button class="period-btn active" data-period="agosto">Agosto</button>
+                        <button class="period-btn" data-period="julho">Julho</button>
+                        <button class="period-btn" data-period="ateJulho">Até Julho</button>
+                    </div>
+                </div>
+                
+                <div class="funnel-container">
+                    <h2 class="funnel-title" id="funnelTitle">Funil de Vendas - Agosto</h2>
+                    
+                    <div class="funnel-chart">
+                        <div class="funnel-stage stage-visita">
+                            <div class="stage-content">
+                                <div class="stage-label">VISITAS</div>
+                                <div class="stage-value" id="visitasValue">0</div>
+                            </div>
+                        </div>
+                        
+                        <div class="funnel-stage stage-pasta">
+                            <div class="stage-content">
+                                <div class="stage-label">PASTAS</div>
+                                <div class="stage-value" id="pastasValue">0</div>
+                            </div>
+                            <div class="conversion-rate" id="pastasConversion">0%</div>
+                        </div>
+                        
+                        <div class="funnel-stage stage-venda-total">
+                            <div class="stage-content">
+                                <div class="stage-label">VENDA TOTAL</div>
+                                <div class="stage-value" id="vendaTotalValue">0</div>
+                            </div>
+                            <div class="conversion-rate" id="vendaTotalConversion">0%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metrics-summary">
+                    <div class="metric-summary-card">
+                        <h4>Taxa de Conversão Visita → Pasta</h4>
+                        <div class="value" id="convVisitaPasta">0%</div>
+                    </div>
+                    
+                    <div class="metric-summary-card">
+                        <h4>Taxa de Conversão Pasta → Venda</h4>
+                        <div class="value" id="convPastaVenda">0%</div>
+                    </div>
+                    
+                    <div class="metric-summary-card">
+                        <h4>Taxa de Conversão Geral</h4>
+                        <div class="value" id="convGeral">0%</div>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados atualizados do CSV
+        const dados = [
+            {"empreendimento":"VITÓRIA ACÁCIA","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":719105.49,"realVgvAgo":0.0,"prevQtdAgo":3.0,"realQtdAgo":0.0,"prevVgvJul":718746.12,"realVgvJul":214074.0,"prevQtdJul":3.0,"realQtdJul":1.0,"prevVgvAno":10253062.1699999999,"prevQtdAno":46.0,"prevVgvAteJul":6653937.4000000004,"realVgvAteJul":5372053.9699999997,"prevQtdAteJul":31.0,"realQtdAteJul":25.0},
+            {"empreendimento":"Vitória Mondubim","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":0.0,"prevQtdAno":0.0,"prevVgvAteJul":0.0,"realVgvAteJul":890155.8,"prevQtdAteJul":0.0,"realQtdAteJul":4.0},
+            {"empreendimento":"VITÓRIA SENNA","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":694902.27,"realVgvAgo":0.0,"prevQtdAgo":3.0,"realQtdAgo":0.0,"prevVgvJul":694554.99,"realVgvJul":0.0,"prevQtdJul":3.0,"realQtdJul":0.0,"prevVgvAno":8332589.4100000001,"prevQtdAno":36.0,"prevVgvAteJul":4854601.8200000003,"realVgvAteJul":3633908.52,"prevQtdAteJul":21.0,"realQtdAteJul":17.0},
+            {"empreendimento":"Vista Mar Condomínio Clube","canal":"HOUSE","linha":"VISTA","prevVgvAgo":960297.58,"realVgvAgo":370405.99,"prevQtdAgo":3.0,"realQtdAgo":1.0,"prevVgvJul":959817.67,"realVgvJul":0.0,"prevQtdJul":3.0,"realQtdJul":0.0,"prevVgvAno":10232151.5999999996,"prevQtdAno":32.0,"prevVgvAteJul":6708659.0199999996,"realVgvAteJul":6037768.8499999996,"prevQtdAteJul":21.0,"realQtdAteJul":17.0},
+            {"empreendimento":"Belvedere Condomínio Clube","canal":"HOUSE","linha":"VISTA","prevVgvAgo":983516.33,"realVgvAgo":0.0,"prevQtdAgo":3.0,"realQtdAgo":0.0,"prevVgvJul":983024.8199999999,"realVgvJul":1371701.96,"prevQtdJul":3.0,"realQtdJul":4.0,"prevVgvAno":11203698.3499999996,"prevQtdAno":36.0,"prevVgvAteJul":6576694.3899999997,"realVgvAteJul":4466720.9500000002,"prevQtdAteJul":21.0,"realQtdAteJul":13.0},
+            {"empreendimento":"VISTA PARQUE CONDOMÍNIO CLUBE","canal":"HOUSE","linha":"VISTA","prevVgvAgo":995261.46,"realVgvAgo":0.0,"prevQtdAgo":3.0,"realQtdAgo":0.0,"prevVgvJul":994764.08,"realVgvJul":1329237.0,"prevQtdJul":3.0,"realQtdJul":4.0,"prevVgvAno":11337492.6699999999,"prevQtdAno":36.0,"prevVgvAteJul":6655233.1299999999,"realVgvAteJul":6978148.9900000002,"prevQtdAteJul":21.0,"realQtdAteJul":21.0},
+            {"empreendimento":"JÓQUEI CONDOMÍNIO CLUBE","canal":"HOUSE","linha":"VISTA","prevVgvAgo":1181149.1599999999,"realVgvAgo":0.0,"prevQtdAgo":3.0,"realQtdAgo":0.0,"prevVgvJul":1180558.8799999999,"realVgvJul":2593226.29,"prevQtdJul":3.0,"realQtdJul":7.0,"prevVgvAno":14163187.2799999993,"prevQtdAno":36.0,"prevVgvAteJul":8251532.79,"realVgvAteJul":12605794.4900000002,"prevQtdAteJul":21.0,"realQtdAteJul":35.0},
+            {"empreendimento":"Mirante Condominio Clube","canal":"HOUSE","linha":"VISTA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":354999.0,"prevQtdJul":0.0,"realQtdJul":1.0,"prevVgvAno":106499.7,"prevQtdAno":1.0,"prevVgvAteJul":106499.7,"realVgvAteJul":709998.0,"prevQtdAteJul":0.0,"realQtdAteJul":2.0},
+            {"empreendimento":"Vitória Caucaia","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":0.0,"prevQtdAno":0.0,"prevVgvAteJul":0.0,"realVgvAteJul":209500.0,"prevQtdAteJul":0.0,"realQtdAteJul":1.0},
+            {"empreendimento":"Alta Vista Passare","canal":"HOUSE","linha":"VIVER","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":0.0,"prevQtdAno":0.0,"prevVgvAteJul":0.0,"realVgvAteJul":0.0,"prevQtdAteJul":0.0,"realQtdAteJul":0.0},
+            {"empreendimento":"ATLÂNTICO CONDOMINIO CLUBE","canal":"HOUSE","linha":"VISTA","prevVgvAgo":1368415.9099999999,"realVgvAgo":0.0,"prevQtdAgo":4.0,"realQtdAgo":0.0,"prevVgvJul":1367732.05,"realVgvJul":1390978.05,"prevQtdJul":4.0,"realQtdJul":4.0,"prevVgvAno":15044069.2300000004,"prevQtdAno":44.0,"prevVgvAteJul":8827668.6199999992,"realVgvAteJul":7349257.9900000002,"prevQtdAteJul":27.0,"realQtdAteJul":20.0},
+            {"empreendimento":"VISTA COSTEIRA CUMBUCO","canal":"HOUSE","linha":"VISTA","prevVgvAgo":1058113.5800000001,"realVgvAgo":355335.01,"prevQtdAgo":3.0,"realQtdAgo":1.0,"prevVgvJul":1442161.0800000001,"realVgvJul":1044643.99,"prevQtdJul":5.0,"realQtdJul":3.0,"prevVgvAno":11060182.5800000001,"prevQtdAno":35.0,"prevVgvAteJul":5764321.4400000004,"realVgvAteJul":1044643.99,"prevQtdAteJul":20.0,"realQtdAteJul":3.0},
+            {"empreendimento":"VITÓRIA EUSEBIO","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":936468.0,"realVgvAgo":216000.0,"prevQtdAgo":5.0,"realQtdAgo":1.0,"prevVgvJul":936000.0,"realVgvJul":415296.0,"prevQtdJul":5.0,"realQtdJul":2.0,"prevVgvAno":7846580.4299999997,"prevQtdAno":42.0,"prevVgvAteJul":3159555.75,"realVgvAteJul":1906569.0900000001,"prevQtdAteJul":17.0,"realQtdAteJul":9.0},
+            {"empreendimento":"VITÓRIA MARACANAÚ","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":1020510.0,"realVgvAgo":0.0,"prevQtdAgo":5.0,"realQtdAgo":0.0,"prevVgvJul":1140000.0,"realVgvJul":422151.0,"prevQtdJul":6.0,"realQtdJul":2.0,"prevVgvAno":6247655.0999999996,"prevQtdAno":31.0,"prevVgvAteJul":1140000.0,"realVgvAteJul":1051851.0,"prevQtdAteJul":6.0,"realQtdAteJul":5.0},
+            {"empreendimento":"PAUPINA ","canal":"HOUSE","linha":"VITÓRIA","prevVgvAgo":1456361.45,"realVgvAgo":0.0,"prevQtdAgo":7.0,"realQtdAgo":0.0,"prevVgvJul":1455633.6299999999,"realVgvJul":0.0,"prevQtdJul":7.0,"realQtdJul":0.0,"prevVgvAno":14164320.2200000007,"prevQtdAno":67.0,"prevVgvAteJul":6875227.5300000003,"realVgvAteJul":0.0,"prevQtdAteJul":32.0,"realQtdAteJul":0.0},
+            {"empreendimento":"VITÓRIA ACÁCIA","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":1677074.27,"realVgvAgo":0.0,"prevQtdAgo":8.0,"realQtdAgo":0.0,"prevVgvJul":1677074.27,"realVgvJul":2381341.9199999999,"prevQtdJul":8.0,"realQtdJul":11.0,"prevVgvAno":23923811.7399999984,"prevQtdAno":111.0,"prevVgvAteJul":15525853.9299999997,"realVgvAteJul":50678764.0900000036,"prevQtdAteJul":71.0,"realQtdAteJul":235.0},
+            {"empreendimento":"Vitória Mondubim","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":0.0,"prevQtdAno":0.0,"prevVgvAteJul":0.0,"realVgvAteJul":222031.98,"prevQtdAteJul":0.0,"realQtdAteJul":1.0},
+            {"empreendimento":"VITÓRIA SENNA","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":1620628.3100000001,"realVgvAgo":0.0,"prevQtdAgo":8.0,"realQtdAgo":0.0,"prevVgvJul":1620628.3100000001,"realVgvJul":0.0,"prevQtdJul":8.0,"realQtdJul":0.0,"prevVgvAno":19442708.620000001,"prevQtdAno":96.0,"prevVgvAteJul":11327404.2400000002,"realVgvAteJul":48367640.6899999976,"prevQtdAteJul":56.0,"realQtdAteJul":229.0},
+            {"empreendimento":"Vista Mar Condomínio Clube","canal":"IMOB","linha":"VISTA","prevVgvAgo":2239574.5600000001,"realVgvAgo":0.0,"prevQtdAgo":6.0,"realQtdAgo":0.0,"prevVgvJul":2239574.5600000001,"realVgvJul":2587127.9900000002,"prevQtdJul":6.0,"realQtdJul":7.0,"prevVgvAno":23875020.4100000001,"prevQtdAno":64.0,"prevVgvAteJul":15653537.7100000009,"realVgvAteJul":14727466.0600000005,"prevQtdAteJul":42.0,"realQtdAteJul":42.0},
+            {"empreendimento":"Belvedere Condomínio Clube","canal":"IMOB","linha":"VISTA","prevVgvAgo":2293724.5699999998,"realVgvAgo":347274.99,"prevQtdAgo":7.0,"realQtdAgo":1.0,"prevVgvJul":2293724.5699999998,"realVgvJul":5183727.0599999996,"prevQtdJul":7.0,"realQtdJul":15.0,"prevVgvAno":26141962.8099999987,"prevQtdAno":78.0,"prevVgvAteJul":15345620.25,"realVgvAteJul":23530385.6700000018,"prevQtdAteJul":46.0,"realQtdAteJul":70.0},
+            {"empreendimento":"VISTA PARQUE CONDOMÍNIO CLUBE","canal":"IMOB","linha":"VISTA","prevVgvAgo":2321116.1800000002,"realVgvAgo":0.0,"prevQtdAgo":7.0,"realQtdAgo":0.0,"prevVgvJul":2321116.1800000002,"realVgvJul":1995240.99,"prevQtdJul":7.0,"realQtdJul":6.0,"prevVgvAno":26454149.5599999987,"prevQtdAno":78.0,"prevVgvAteJul":15528877.3100000005,"realVgvAteJul":15009979.9399999995,"prevQtdAteJul":46.0,"realQtdAteJul":46.0},
+            {"empreendimento":"JÓQUEI CONDOMÍNIO CLUBE","canal":"IMOB","linha":"VISTA","prevVgvAgo":2754637.3799999999,"realVgvAgo":0.0,"prevQtdAgo":8.0,"realQtdAgo":0.0,"prevVgvJul":2754637.3799999999,"realVgvJul":1509151.8999999999,"prevQtdJul":8.0,"realQtdJul":4.0,"prevVgvAno":33047436.9800000004,"prevQtdAno":96.0,"prevVgvAteJul":19253576.5100000016,"realVgvAteJul":15115489.75,"prevQtdAteJul":56.0,"realQtdAteJul":42.0},
+            {"empreendimento":"Mirante Condominio Clube","canal":"IMOB","linha":"VISTA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":248499.3,"prevQtdAno":1.0,"prevVgvAteJul":248499.3,"realVgvAteJul":354999.0,"prevQtdAteJul":1.0,"realQtdAteJul":1.0},
+            {"empreendimento":"Vitória Caucaia","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":282391.77,"prevQtdAno":1.0,"prevVgvAteJul":282391.77,"realVgvAteJul":1436093.99,"prevQtdAteJul":1.0,"realQtdAteJul":7.0},
+            {"empreendimento":"Alta Vista Passare","canal":"IMOB","linha":"VIVER","prevVgvAgo":0.0,"realVgvAgo":0.0,"prevQtdAgo":0.0,"realQtdAgo":0.0,"prevVgvJul":0.0,"realVgvJul":0.0,"prevQtdJul":0.0,"realQtdJul":0.0,"prevVgvAno":0.0,"prevQtdAno":0.0,"prevVgvAteJul":0.0,"realVgvAteJul":0.0,"prevQtdAteJul":0.0,"realQtdAteJul":0.0},
+            {"empreendimento":"ATLÂNTICO CONDOMINIO CLUBE","canal":"IMOB","linha":"VISTA","prevVgvAgo":3191374.7799999998,"realVgvAgo":1061975.99,"prevQtdAgo":9.0,"realQtdAgo":3.0,"prevVgvJul":3191374.7799999998,"realVgvJul":3531847.5,"prevQtdJul":9.0,"realQtdJul":10.0,"prevVgvAno":35102828.200000003,"prevQtdAno":101.0,"prevVgvAteJul":20597893.4499999993,"realVgvAteJul":14758478.4299999997,"prevQtdAteJul":59.0,"realQtdAteJul":40.0},
+            {"empreendimento":"VISTA COSTEIRA CUMBUCO","canal":"IMOB","linha":"VISTA","prevVgvAgo":3365042.52,"realVgvAgo":0.0,"prevQtdAgo":8.0,"realQtdAgo":0.0,"prevVgvJul":3365042.52,"realVgvJul":3219099.96,"prevQtdJul":8.0,"realQtdJul":9.0,"prevVgvAno":25807092.6799999997,"prevQtdAno":84.0,"prevVgvAteJul":13450083.3599999994,"realVgvAteJul":17297711.8099999987,"prevQtdAteJul":44.0,"realQtdAteJul":51.0},
+            {"empreendimento":"VITÓRIA EUSEBIO","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":2184000.0,"realVgvAgo":1666994.0,"prevQtdAgo":11.0,"realQtdAgo":8.0,"prevVgvJul":2184000.0,"realVgvJul":11615276.4000000004,"prevQtdJul":11.0,"realQtdJul":56.0,"prevVgvAno":18308687.6700000018,"prevQtdAno":92.0,"prevVgvAteJul":7372296.75,"realVgvAteJul":16299944.4000000004,"prevQtdAteJul":37.0,"realQtdAteJul":79.0},
+            {"empreendimento":"VITÓRIA MARACANAÚ","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":2660000.0,"realVgvAgo":224579.13,"prevQtdAgo":12.0,"realQtdAgo":1.0,"prevVgvJul":2660000.0,"realVgvJul":3025853.0,"prevQtdJul":12.0,"realQtdJul":14.0,"prevVgvAno":14577861.9000000004,"prevQtdAno":73.0,"prevVgvAteJul":2660000.0,"realVgvAteJul":7059253.0,"prevQtdAteJul":13.0,"realQtdAteJul":33.0},
+            {"empreendimento":"PAUPINA ","canal":"IMOB","linha":"VITÓRIA","prevVgvAgo":3396478.4700000002,"realVgvAgo":0.0,"prevQtdAgo":15.0,"realQtdAgo":0.0,"prevVgvJul":3396478.4700000002,"realVgvJul":0.0,"prevQtdJul":15.0,"realQtdJul":0.0,"prevVgvAno":33050080.5100000016,"prevQtdAno":147.0,"prevVgvAteJul":16042197.5600000005,"realVgvAteJul":0.0,"prevQtdAteJul":72.0,"realQtdAteJul":0.0}
+        ];
+        
+        // Dados do funil de vendas (mantidos da versão anterior)
+        let funnelData = [];
+        let currentPeriod = 'agosto';
+        
+        // Carregar dados do funil
+        const funnelDataJson = [
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Vitória Mondubim","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":10,"PASTA_ATE_JULHO":3,"VENDA_TOTAL_ATE_JULHO":4},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"VITÓRIA SENNA","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":3,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":2,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":47,"PASTA_ATE_JULHO":51,"VENDA_TOTAL_ATE_JULHO":17},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Vista Mar Condomínio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":3,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":1,"VISITA_JULHO":25,"PASTA_JULHO":4,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":115,"PASTA_ATE_JULHO":35,"VENDA_TOTAL_ATE_JULHO":17},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Belvedere Condomínio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":13,"PASTA_AGOSTO":2,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":33,"PASTA_JULHO":8,"VENDA_TOTAL_JULHO":4,"VISITA_ATE_JULHO":170,"PASTA_ATE_JULHO":37,"VENDA_TOTAL_ATE_JULHO":13},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"VISTA PARQUE CONDOMÍNIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":21,"PASTA_AGOSTO":4,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":53,"PASTA_JULHO":10,"VENDA_TOTAL_JULHO":4,"VISITA_ATE_JULHO":180,"PASTA_ATE_JULHO":52,"VENDA_TOTAL_ATE_JULHO":21},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"JÓQUEI CONDOMÍNIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":41,"PASTA_AGOSTO":4,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":117,"PASTA_JULHO":8,"VENDA_TOTAL_JULHO":7,"VISITA_ATE_JULHO":387,"PASTA_ATE_JULHO":75,"VENDA_TOTAL_ATE_JULHO":35},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Mirante Condominio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":1,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":1,"VENDA_TOTAL_JULHO":1,"VISITA_ATE_JULHO":3,"PASTA_ATE_JULHO":3,"VENDA_TOTAL_ATE_JULHO":2},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Vitória Caucaia","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":1,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":3,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":6,"PASTA_ATE_JULHO":2,"VENDA_TOTAL_ATE_JULHO":1},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"Alta Vista Passare","LINHA":"VIVER","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":1,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":3,"PASTA_ATE_JULHO":0,"VENDA_TOTAL_ATE_JULHO":0},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"ATLÂNTICO CONDOMINIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":11,"PASTA_AGOSTO":2,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":141,"PASTA_JULHO":5,"VENDA_TOTAL_JULHO":4,"VISITA_ATE_JULHO":210,"PASTA_ATE_JULHO":39,"VENDA_TOTAL_ATE_JULHO":20},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"VISTA COSTEIRA CUMBUCO","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":4,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":1,"VISITA_JULHO":7,"PASTA_JULHO":4,"VENDA_TOTAL_JULHO":3,"VISITA_ATE_JULHO":10,"PASTA_ATE_JULHO":6,"VENDA_TOTAL_ATE_JULHO":3},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"VITÓRIA EUSEBIO","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":19,"PASTA_AGOSTO":1,"VENDA_TOTAL_AGOSTO":1,"VISITA_JULHO":51,"PASTA_JULHO":14,"VENDA_TOTAL_JULHO":2,"VISITA_ATE_JULHO":81,"PASTA_ATE_JULHO":38,"VENDA_TOTAL_ATE_JULHO":9},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"VITÓRIA MARACANAÚ","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":24,"PASTA_AGOSTO":3,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":63,"PASTA_JULHO":13,"VENDA_TOTAL_JULHO":2,"VISITA_ATE_JULHO":92,"PASTA_ATE_JULHO":28,"VENDA_TOTAL_ATE_JULHO":5},
+            {"EQUIPE":"HOUSE","EMPREENDIMENTO":"PAUPINA ","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":0,"PASTA_ATE_JULHO":0,"VENDA_TOTAL_ATE_JULHO":0},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VITÓRIA ACÁCIA","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":7,"PASTA_AGOSTO":12,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":22,"PASTA_JULHO":75,"VENDA_TOTAL_JULHO":11,"VISITA_ATE_JULHO":111,"PASTA_ATE_JULHO":886,"VENDA_TOTAL_ATE_JULHO":235},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Vitória Mondubim","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":0,"PASTA_ATE_JULHO":4,"VENDA_TOTAL_ATE_JULHO":1},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VITÓRIA SENNA","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":2,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":1,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":20,"PASTA_ATE_JULHO":702,"VENDA_TOTAL_ATE_JULHO":229},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Vista Mar Condomínio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":9,"PASTA_JULHO":10,"VENDA_TOTAL_JULHO":7,"VISITA_ATE_JULHO":30,"PASTA_ATE_JULHO":72,"VENDA_TOTAL_ATE_JULHO":42},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Belvedere Condomínio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":27,"PASTA_AGOSTO":4,"VENDA_TOTAL_AGOSTO":1,"VISITA_JULHO":54,"PASTA_JULHO":26,"VENDA_TOTAL_JULHO":15,"VISITA_ATE_JULHO":337,"PASTA_ATE_JULHO":141,"VENDA_TOTAL_ATE_JULHO":70},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VISTA PARQUE CONDOMÍNIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":4,"PASTA_AGOSTO":3,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":10,"PASTA_JULHO":16,"VENDA_TOTAL_JULHO":6,"VISITA_ATE_JULHO":56,"PASTA_ATE_JULHO":121,"VENDA_TOTAL_ATE_JULHO":46},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"JÓQUEI CONDOMÍNIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":3,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":24,"PASTA_JULHO":12,"VENDA_TOTAL_JULHO":4,"VISITA_ATE_JULHO":144,"PASTA_ATE_JULHO":101,"VENDA_TOTAL_ATE_JULHO":42},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Mirante Condominio Clube","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":3,"PASTA_ATE_JULHO":1,"VENDA_TOTAL_ATE_JULHO":1},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Vitória Caucaia","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":1,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":1,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":2,"PASTA_ATE_JULHO":14,"VENDA_TOTAL_ATE_JULHO":7},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"Alta Vista Passare","LINHA":"VIVER","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":2,"PASTA_ATE_JULHO":0,"VENDA_TOTAL_ATE_JULHO":0},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"ATLÂNTICO CONDOMINIO CLUBE","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":2,"PASTA_AGOSTO":3,"VENDA_TOTAL_AGOSTO":3,"VISITA_JULHO":12,"PASTA_JULHO":16,"VENDA_TOTAL_JULHO":10,"VISITA_ATE_JULHO":24,"PASTA_ATE_JULHO":72,"VENDA_TOTAL_ATE_JULHO":40},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VISTA COSTEIRA CUMBUCO","LINHA":"VISTA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":4,"PASTA_AGOSTO":3,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":3,"PASTA_JULHO":12,"VENDA_TOTAL_JULHO":9,"VISITA_ATE_JULHO":5,"PASTA_ATE_JULHO":40,"VENDA_TOTAL_ATE_JULHO":51},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VITÓRIA EUSEBIO","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":23,"PASTA_AGOSTO":18,"VENDA_TOTAL_AGOSTO":8,"VISITA_JULHO":98,"PASTA_JULHO":120,"VENDA_TOTAL_JULHO":56,"VISITA_ATE_JULHO":164,"PASTA_ATE_JULHO":219,"VENDA_TOTAL_ATE_JULHO":79},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"VITÓRIA MARACANAÚ","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":17,"VENDA_TOTAL_AGOSTO":1,"VISITA_JULHO":5,"PASTA_JULHO":67,"VENDA_TOTAL_JULHO":14,"VISITA_ATE_JULHO":12,"PASTA_ATE_JULHO":145,"VENDA_TOTAL_ATE_JULHO":33},
+            {"EQUIPE":"IMOB","EMPREENDIMENTO":"PAUPINA ","LINHA":"VITÓRIA","TIPO_VENDA":"VENDA TOTAL","VISITA_AGOSTO":0,"PASTA_AGOSTO":0,"VENDA_TOTAL_AGOSTO":0,"VISITA_JULHO":0,"PASTA_JULHO":0,"VENDA_TOTAL_JULHO":0,"VISITA_ATE_JULHO":0,"PASTA_ATE_JULHO":0,"VENDA_TOTAL_ATE_JULHO":0}
+        ];
+        
+        funnelData = funnelDataJson;
+        
+        // Variáveis globais
+        let currentDashboardPeriod = 'agosto';
+        let vgvChart, qtdChart, topEmpreendimentosChart;
+        
+        // Função para alternar entre abas
+        function showTab(tabName) {
+            // Esconder todas as abas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remover classe active de todos os botões
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Mostrar a aba selecionada
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Adicionar classe active ao botão correspondente
+            event.target.classList.add('active');
+            
+            // Se for a aba performance, inicializar os dados
+            if (tabName === 'performance') {
+                populatePerformanceFilters();
+                updateFunnel();
+            } else if (tabName === 'dashboard') {
+                updateDashboard();
+                createCharts();
+            }
+        }
+        
+        // Funções da aba Performance
+        function populatePerformanceFilters() {
+            const empreendimentoSelect = document.getElementById('empreendimentoFilterPerf');
+            const empreendimentos = [...new Set(funnelData.map(item => item.EMPREENDIMENTO))];
+            
+            empreendimentoSelect.innerHTML = '<option value="todos">Todos os Empreendimentos</option>';
+            empreendimentos.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp;
+                option.textContent = emp;
+                empreendimentoSelect.appendChild(option);
+            });
+        }
+        
+        function getFilteredData() {
+            const equipe = document.getElementById('equipeFilter').value;
+            const empreendimento = document.getElementById('empreendimentoFilterPerf').value;
+            const linha = document.getElementById('linhaFilterPerf').value;
+            const tipoVenda = document.getElementById('tipoVendaFilter').value;
+            
+            return funnelData.filter(item => {
+                return (equipe === 'todas' || item.EQUIPE === equipe) &&
+                       (empreendimento === 'todos' || item.EMPREENDIMENTO === empreendimento) &&
+                       (linha === 'todas' || item.LINHA === linha) &&
+                       (tipoVenda === 'todos' || item.TIPO_VENDA === tipoVenda);
+            });
+        }
+        
+        function updateFunnel() {
+            const filteredData = getFilteredData();
+            const period = currentPeriod;
+            
+            let visitas = 0, pastas = 0, vendaTotal = 0;
+            
+            filteredData.forEach(item => {
+                if (period === 'agosto') {
+                    visitas += item.VISITA_AGOSTO || 0;
+                    pastas += item.PASTA_AGOSTO || 0;
+                    vendaTotal += item.VENDA_TOTAL_AGOSTO || 0;
+                } else if (period === 'julho') {
+                    visitas += item.VISITA_JULHO || 0;
+                    pastas += item.PASTA_JULHO || 0;
+                    vendaTotal += item.VENDA_TOTAL_JULHO || 0;
+                } else if (period === 'ateJulho') {
+                    visitas += item.VISITA_ATE_JULHO || 0;
+                    pastas += item.PASTA_ATE_JULHO || 0;
+                    vendaTotal += item.VENDA_TOTAL_ATE_JULHO || 0;
+                }
+            });
+            
+            // Atualizar valores no funil
+            document.getElementById('visitasValue').textContent = visitas.toLocaleString();
+            document.getElementById('pastasValue').textContent = pastas.toLocaleString();
+            document.getElementById('vendaTotalValue').textContent = vendaTotal.toLocaleString();
+            
+            // Calcular taxas de conversão
+            const convVisitaPasta = visitas > 0 ? ((pastas / visitas) * 100).toFixed(1) : 0;
+            const convPastaVenda = pastas > 0 ? ((vendaTotal / pastas) * 100).toFixed(1) : 0;
+            const convGeral = visitas > 0 ? ((vendaTotal / visitas) * 100).toFixed(1) : 0;
+            
+            // Atualizar taxas de conversão no funil
+            document.getElementById('pastasConversion').textContent = convVisitaPasta + '%';
+            document.getElementById('vendaTotalConversion').textContent = convPastaVenda + '%';
+            
+            // Atualizar métricas resumo
+            document.getElementById('convVisitaPasta').textContent = convVisitaPasta + '%';
+            document.getElementById('convPastaVenda').textContent = convPastaVenda + '%';
+            document.getElementById('convGeral').textContent = convGeral + '%';
+            
+            // Calcular eficiência do funil (média das conversões)
+            const eficiencia = ((parseFloat(convVisitaPasta) + parseFloat(convPastaVenda)) / 2).toFixed(1);
+            document.getElementById('eficienciaFunil').textContent = eficiencia + '%';
+            
+            // Atualizar título
+            const periodNames = {
+                'agosto': 'Agosto',
+                'julho': 'Julho',
+                'ateJulho': 'Até Julho'
+            };
+            document.getElementById('funnelTitle').textContent = `Funil de Vendas - ${periodNames[period]}`;
+        }
+        
+        // Funções do Dashboard
+        function getFilteredDashboardData() {
+            const linha = document.getElementById('linhaFilter').value;
+            const canal = document.getElementById('canalFilter').value;
+            const empreendimento = document.getElementById('empreendimentoFilter').value;
+            
+            return dados.filter(item => {
+                return (linha === 'todas' || item.linha === linha) &&
+                       (canal === 'todos' || item.canal === canal) &&
+                       (empreendimento === 'todos' || item.empreendimento === empreendimento);
+            });
+        }
+        
+        function updateDashboard() {
+            const filteredData = getFilteredDashboardData();
+            const period = currentDashboardPeriod;
+            
+            // Calcular métricas
+            let totalVgvPrev = 0, totalVgvReal = 0, totalQtdPrev = 0, totalQtdReal = 0;
+            
+            filteredData.forEach(item => {
+                if (period === 'agosto') {
+                    totalVgvPrev += item.prevVgvAgo || 0;
+                    totalVgvReal += item.realVgvAgo || 0;
+                    totalQtdPrev += item.prevQtdAgo || 0;
+                    totalQtdReal += item.realQtdAgo || 0;
+                } else if (period === 'julho') {
+                    totalVgvPrev += item.prevVgvJul || 0;
+                    totalVgvReal += item.realVgvJul || 0;
+                    totalQtdPrev += item.prevQtdJul || 0;
+                    totalQtdReal += item.realQtdJul || 0;
+                } else if (period === 'ateJulho') {
+                    totalVgvPrev += item.prevVgvAteJul || 0;
+                    totalVgvReal += item.realVgvAteJul || 0;
+                    totalQtdPrev += item.prevQtdAteJul || 0;
+                    totalQtdReal += item.realQtdAteJul || 0;
+                } else if (period === 'ano') {
+                    totalVgvPrev += item.prevVgvAno || 0;
+                    totalVgvReal += item.realVgvAteJul || 0; // Usando realizado até julho como proxy
+                    totalQtdPrev += item.prevQtdAno || 0;
+                    totalQtdReal += item.realQtdAteJul || 0;
+                }
+            });
+            
+            // Atualizar métricas
+            updateMetrics(totalVgvPrev, totalVgvReal, totalQtdPrev, totalQtdReal, period);
+            
+            // Atualizar tabela
+            updateTable(filteredData, period);
+            
+            // Atualizar gráficos
+            updateCharts(filteredData, period);
+        }
+        
+        function updateMetrics(vgvPrev, vgvReal, qtdPrev, qtdReal, period) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            const periodNames = {
+                'agosto': 'Agosto',
+                'julho': 'Julho',
+                'ateJulho': 'Até Julho',
+                'ano': 'Anual'
+            };
+            
+            const performanceVgv = vgvPrev > 0 ? ((vgvReal / vgvPrev) * 100).toFixed(1) : 0;
+            const performanceQtd = qtdPrev > 0 ? ((qtdReal / qtdPrev) * 100).toFixed(1) : 0;
+            
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <h3>VGV Previsto - ${periodNames[period]}</h3>
+                    <div class="value">R$ ${(vgvPrev / 1000000).toFixed(1)}M</div>
+                    <div class="subtitle">Meta estabelecida</div>
+                </div>
+                <div class="metric-card">
+                    <h3>VGV Realizado - ${periodNames[period]}</h3>
+                    <div class="value">R$ ${(vgvReal / 1000000).toFixed(1)}M</div>
+                    <div class="subtitle">${performanceVgv}% da meta</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Unidades Previstas - ${periodNames[period]}</h3>
+                    <div class="value">${qtdPrev.toFixed(0)}</div>
+                    <div class="subtitle">Meta de vendas</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Unidades Realizadas - ${periodNames[period]}</h3>
+                    <div class="value">${qtdReal.toFixed(0)}</div>
+                    <div class="subtitle">${performanceQtd}% da meta</div>
+                </div>
+            `;
+        }
+        
+        function updateTable(data, period) {
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            const tableTitle = document.getElementById('tableTitle');
+            
+            const periodNames = {
+                'agosto': 'Agosto',
+                'julho': 'Julho',
+                'ateJulho': 'Até Julho',
+                'ano': 'Anual'
+            };
+            
+            tableTitle.textContent = `Detalhamento por Empreendimento - ${periodNames[period]}`;
+            
+            tableHead.innerHTML = `
+                <tr>
+                    <th>Empreendimento</th>
+                    <th>Canal</th>
+                    <th>Linha</th>
+                    <th>VGV Previsto</th>
+                    <th>VGV Realizado</th>
+                    <th>Qtd Prevista</th>
+                    <th>Qtd Realizada</th>
+                    <th>Performance VGV</th>
+                    <th>Performance Qtd</th>
+                </tr>
+            `;
+            
+            let tableRows = '';
+            data.forEach(item => {
+                let vgvPrev, vgvReal, qtdPrev, qtdReal;
+                
+                if (period === 'agosto') {
+                    vgvPrev = item.prevVgvAgo || 0;
+                    vgvReal = item.realVgvAgo || 0;
+                    qtdPrev = item.prevQtdAgo || 0;
+                    qtdReal = item.realQtdAgo || 0;
+                } else if (period === 'julho') {
+                    vgvPrev = item.prevVgvJul || 0;
+                    vgvReal = item.realVgvJul || 0;
+                    qtdPrev = item.prevQtdJul || 0;
+                    qtdReal = item.realQtdJul || 0;
+                } else if (period === 'ateJulho') {
+                    vgvPrev = item.prevVgvAteJul || 0;
+                    vgvReal = item.realVgvAteJul || 0;
+                    qtdPrev = item.prevQtdAteJul || 0;
+                    qtdReal = item.realQtdAteJul || 0;
+                } else if (period === 'ano') {
+                    vgvPrev = item.prevVgvAno || 0;
+                    vgvReal = item.realVgvAteJul || 0;
+                    qtdPrev = item.prevQtdAno || 0;
+                    qtdReal = item.realQtdAteJul || 0;
+                }
+                
+                const perfVgv = vgvPrev > 0 ? ((vgvReal / vgvPrev) * 100).toFixed(1) : 0;
+                const perfQtd = qtdPrev > 0 ? ((qtdReal / qtdPrev) * 100).toFixed(1) : 0;
+                
+                const perfVgvClass = perfVgv >= 100 ? 'positive' : perfVgv >= 80 ? 'warning' : 'negative';
+                const perfQtdClass = perfQtd >= 100 ? 'positive' : perfQtd >= 80 ? 'warning' : 'negative';
+                
+                tableRows += `
+                    <tr>
+                        <td>${item.empreendimento}</td>
+                        <td>${item.canal}</td>
+                        <td>${item.linha}</td>
+                        <td>R$ ${(vgvPrev / 1000).toFixed(0)}K</td>
+                        <td>R$ ${(vgvReal / 1000).toFixed(0)}K</td>
+                        <td>${qtdPrev.toFixed(0)}</td>
+                        <td>${qtdReal.toFixed(0)}</td>
+                        <td><span class="performance-indicator ${perfVgvClass}">${perfVgv}%</span></td>
+                        <td><span class="performance-indicator ${perfQtdClass}">${perfQtd}%</span></td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = tableRows;
+        }
+        
+        function createCharts() {
+            // Destruir gráficos existentes
+            if (vgvChart) vgvChart.destroy();
+            if (qtdChart) qtdChart.destroy();
+            if (topEmpreendimentosChart) topEmpreendimentosChart.destroy();
+            
+            updateCharts(getFilteredDashboardData(), currentDashboardPeriod);
+        }
+        
+        function updateCharts(data, period) {
+            const periodNames = {
+                'agosto': 'Agosto',
+                'julho': 'Julho',
+                'ateJulho': 'Até Julho',
+                'ano': 'Anual'
+            };
+            
+            // Atualizar títulos dos gráficos
+            document.getElementById('chartTitle1').textContent = `VGV por Linha de Produto - ${periodNames[period]}`;
+            document.getElementById('chartTitle2').textContent = `Quantidade de Vendas por Canal - ${periodNames[period]}`;
+            document.getElementById('chartTitle3').textContent = `Top 5 Empreendimentos - VGV ${periodNames[period]}`;
+            
+            // Gráfico VGV por Linha
+            const vgvPorLinha = {};
+            data.forEach(item => {
+                let vgvReal;
+                if (period === 'agosto') vgvReal = item.realVgvAgo || 0;
+                else if (period === 'julho') vgvReal = item.realVgvJul || 0;
+                else if (period === 'ateJulho') vgvReal = item.realVgvAteJul || 0;
+                else if (period === 'ano') vgvReal = item.realVgvAteJul || 0;
+                
+                if (!vgvPorLinha[item.linha]) vgvPorLinha[item.linha] = 0;
+                vgvPorLinha[item.linha] += vgvReal;
+            });
+            
+            const ctxVgv = document.getElementById('vgvChart').getContext('2d');
+            vgvChart = new Chart(ctxVgv, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(vgvPorLinha),
+                    datasets: [{
+                        data: Object.values(vgvPorLinha).map(v => v / 1000000),
+                        backgroundColor: ['#007C27', '#6ECC01', '#00512A']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': R$ ' + context.parsed.toFixed(1) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Gráfico Quantidade por Canal
+            const qtdPorCanal = {};
+            data.forEach(item => {
+                let qtdReal;
+                if (period === 'agosto') qtdReal = item.realQtdAgo || 0;
+                else if (period === 'julho') qtdReal = item.realQtdJul || 0;
+                else if (period === 'ateJulho') qtdReal = item.realQtdAteJul || 0;
+                else if (period === 'ano') qtdReal = item.realQtdAteJul || 0;
+                
+                if (!qtdPorCanal[item.canal]) qtdPorCanal[item.canal] = 0;
+                qtdPorCanal[item.canal] += qtdReal;
+            });
+            
+            const ctxQtd = document.getElementById('qtdChart').getContext('2d');
+            qtdChart = new Chart(ctxQtd, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(qtdPorCanal),
+                    datasets: [{
+                        label: 'Unidades Vendidas',
+                        data: Object.values(qtdPorCanal),
+                        backgroundColor: '#007C27'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+            
+            // Top 5 Empreendimentos
+            const vgvPorEmpreendimento = {};
+            data.forEach(item => {
+                let vgvReal;
+                if (period === 'agosto') vgvReal = item.realVgvAgo || 0;
+                else if (period === 'julho') vgvReal = item.realVgvJul || 0;
+                else if (period === 'ateJulho') vgvReal = item.realVgvAteJul || 0;
+                else if (period === 'ano') vgvReal = item.realVgvAteJul || 0;
+                
+                if (!vgvPorEmpreendimento[item.empreendimento]) vgvPorEmpreendimento[item.empreendimento] = 0;
+                vgvPorEmpreendimento[item.empreendimento] += vgvReal;
+            });
+            
+            const top5 = Object.entries(vgvPorEmpreendimento)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5);
+            
+            const ctxTop = document.getElementById('topEmpreendimentosChart').getContext('2d');
+            topEmpreendimentosChart = new Chart(ctxTop, {
+                type: 'horizontalBar',
+                data: {
+                    labels: top5.map(([nome]) => nome.length > 20 ? nome.substring(0, 20) + '...' : nome),
+                    datasets: [{
+                        label: 'VGV (R$ Milhões)',
+                        data: top5.map(([, valor]) => valor / 1000000),
+                        backgroundColor: '#6ECC01'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+        
+        // Event listeners para a aba Performance
+        document.getElementById('equipeFilter').addEventListener('change', updateFunnel);
+        document.getElementById('empreendimentoFilterPerf').addEventListener('change', updateFunnel);
+        document.getElementById('linhaFilterPerf').addEventListener('change', updateFunnel);
+        document.getElementById('tipoVendaFilter').addEventListener('change', updateFunnel);
+        
+        // Period buttons da aba Performance
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentPeriod = this.dataset.period;
+                updateFunnel();
+            });
+        });
+        
+        // Event listeners do dashboard
+        document.getElementById('linhaFilter').addEventListener('change', updateDashboard);
+        document.getElementById('canalFilter').addEventListener('change', updateDashboard);
+        document.getElementById('empreendimentoFilter').addEventListener('change', updateDashboard);
+        
+        document.querySelectorAll('.period-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                currentDashboardPeriod = this.dataset.period;
+                updateDashboard();
+            });
+        });
+        
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDashboard();
+            createCharts();
+        });
+    </script>
+</body>
+</html>
+
